@@ -314,6 +314,27 @@ button:focus-visible, a:focus-visible {
 .auth-art-copy p, .auth-form-wrap > p { max-width: 440px; color: var(--mist-200); line-height: 1.7; }
 .auth-art-card { display: inline-flex; align-items: center; gap: 10px; margin-top: 24px; border: 1px solid rgb(247 244 236 / 18%); border-radius: 14px; padding: 14px; background: rgb(247 244 236 / 8%); color: var(--gold-300); font-size: .75rem; }
 .auth-art-card strong { display: block; margin-top: 4px; color: var(--ivory-50); }
+.auth-art-copy em { color: var(--gold-300); font-style: normal; }
+.auth-art-scene { position: absolute; inset: 14% 7% 22%; overflow: hidden; border: 1px solid rgb(247 244 236 / 14%); border-radius: 28px; background: linear-gradient(145deg, rgb(0 156 166 / 28%), rgb(16 24 32 / 52%)); }
+.scene-orb { position: absolute; border-radius: 50%; filter: blur(1px); }
+.scene-orb-one { width: 240px; height: 240px; top: -70px; right: -40px; background: rgb(233 207 133 / 35%); }
+.scene-orb-two { width: 180px; height: 180px; bottom: -70px; left: -40px; background: rgb(0 156 166 / 38%); }
+.scene-window { position: absolute; top: 28px; right: 34px; display: flex; gap: 5px; }
+.scene-window span { width: 7px; height: 7px; border-radius: 50%; background: var(--coral-500); }
+.scene-window span:nth-child(2) { background: var(--gold-500); }
+.scene-window span:nth-child(3) { background: var(--teal-500); }
+.scene-desk { position: absolute; right: 11%; bottom: 10%; left: 11%; height: 42%; border-bottom: 12px solid rgb(16 24 32 / 72%); }
+.scene-laptop { position: absolute; right: 18%; bottom: 12px; width: 52%; height: 68%; border: 8px solid var(--ink-950); border-radius: 10px 10px 4px 4px; background: var(--navy-700); transform: perspective(350px) rotateY(-7deg); }
+.scene-screen { display: grid; height: 100%; align-content: center; gap: 8px; padding: 16px; background: linear-gradient(145deg, var(--navy-700), var(--teal-500)); color: var(--ivory-50); }
+.scene-screen span { font-size: .6rem; color: var(--mist-200); }
+.scene-screen strong { font: 600 1.5rem var(--font-playfair); }
+.scene-screen i { display: block; width: 68%; height: 6px; border-radius: 10px; background: var(--gold-300); }
+.scene-plant { position: absolute; bottom: 2px; left: 8%; width: 55px; height: 70px; border-radius: 50% 50% 8px 8px; background: var(--gold-500); }
+.scene-plant i { position: absolute; bottom: 60px; left: 25px; width: 30px; height: 13px; border-radius: 100% 0; background: var(--teal-500); transform: rotate(-35deg); }
+.scene-plant i:nth-child(2) { left: 2px; transform: rotate(28deg); }
+.scene-plant i:nth-child(3) { bottom: 72px; left: 31px; transform: rotate(12deg); }
+.auth-quote { position: absolute; right: 34px; bottom: 32px; left: 34px; margin: 0; color: var(--ivory-50); font: 500 1rem/1.5 var(--font-playfair); text-align: center; }
+.auth-quote cite { display: block; margin-top: 8px; color: var(--gold-300); font: 700 .68rem var(--font-jetbrains); font-style: normal; letter-spacing: .08em; text-transform: uppercase; }
 .auth-form-panel { display: grid; align-items: center; padding: 36px 22px; }
 .auth-form-wrap { width: min(100%, 470px); margin-inline: auto; }
 .auth-form-wrap h1 { color: var(--navy-900); font-size: clamp(2.5rem, 10vw, 4rem); }
