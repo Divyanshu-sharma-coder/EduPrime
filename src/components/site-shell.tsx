@@ -30,13 +30,13 @@ export function Navbar() {
         <Container className="nav-inner">
           <Link className="brand" href="/" onClick={closeMenu}><span className="brand-mark">E</span>EduPrime</Link>
           <nav className="nav-links" aria-label="Primary navigation">
-            <Link href="#courses">Courses</Link>
-            <Link href="#teachers">Teachers</Link>
-            <Link href="#pricing">Pricing</Link>
+            <Link href="/courses">Courses</Link>
+            <Link href="/teachers">Teachers</Link>
+            <Link href="/pricing">Pricing</Link>
           </nav>
           <div className="nav-actions">
             <Link href="#footer">Login</Link>
-            <Link className="btn btn-gold" href="#start">Get Started <ArrowRight size={16} /></Link>
+            <Link className="btn btn-gold" href="/courses">Get Started <ArrowRight size={16} /></Link>
           </div>
           <button className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? "Close menu" : "Open menu"} aria-expanded={menuOpen}>
             {menuOpen ? <X size={23} /> : <Menu size={23} />}
@@ -44,10 +44,10 @@ export function Navbar() {
         </Container>
       </header>
       <nav className={`mobile-menu ${menuOpen ? "open" : ""}`} aria-label="Mobile navigation">
-        <Link href="#courses" onClick={closeMenu}>Courses</Link>
-        <Link href="#teachers" onClick={closeMenu}>Teachers</Link>
-        <Link href="#pricing" onClick={closeMenu}>Pricing</Link>
-        <Link href="#start" className="btn btn-gold" onClick={closeMenu}>Get Started <ArrowRight size={18} /></Link>
+        <Link href="/courses" onClick={closeMenu}>Courses</Link>
+        <Link href="/teachers" onClick={closeMenu}>Teachers</Link>
+        <Link href="/pricing" onClick={closeMenu}>Pricing</Link>
+        <Link href="/courses" className="btn btn-gold" onClick={closeMenu}>Get Started <ArrowRight size={18} /></Link>
       </nav>
     </>
   );
@@ -59,9 +59,9 @@ export function Footer() {
       <Container>
         <div className="footer-grid">
           <div><Link className="brand" href="/"><span className="brand-mark">E</span>EduPrime</Link><p>Build momentum. Learn with purpose.<br />A calmer way to reach your next milestone.</p></div>
-          <div><h3>Explore</h3><div className="footer-links"><Link href="#courses">Courses</Link><Link href="#teachers">Teachers</Link><Link href="#pricing">Pricing</Link></div></div>
-          <div><h3>Company</h3><div className="footer-links"><Link href="#why">Why EduPrime</Link><Link href="#faq">FAQ</Link><Link href="#start">Contact</Link></div></div>
-          <div><h3>Stay in the loop</h3><p>Weekly study ideas, no noise.</p><Link className="btn btn-outline" href="#start">Join the newsletter</Link></div>
+          <div><h3>Explore</h3><div className="footer-links"><Link href="/courses">Courses</Link><Link href="/teachers">Teachers</Link><Link href="/pricing">Pricing</Link></div></div>
+          <div><h3>Company</h3><div className="footer-links"><Link href="/about">About</Link><Link href="/contact">Contact</Link><Link href="/#faq">FAQ</Link></div></div>
+          <div><h3>Stay in the loop</h3><p>Weekly study ideas, no noise.</p><Link className="btn btn-outline" href="/contact">Join the newsletter</Link></div>
         </div>
         <div className="footer-bottom"><span>© 2026 EduPrime. Made for meaningful progress.</span><span>Privacy · Terms</span></div>
       </Container>
