@@ -2,13 +2,17 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Menu, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowRight, LogOut, Menu, UserRound, X } from "lucide-react";
 import { Container } from "./ui";
+import { createClient } from "@/lib/supabase/browser";
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     let previous = window.scrollY;
@@ -22,7 +26,24 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    const supabase = createClient();
+    void supabase.auth.getUser().then(({ data }) => setUserEmail(data.user?.email ?? null));
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserEmail(session?.user?.email ?? null);
+    });
+    return () => authListener.subscription.unsubscribe();
+  }, []);
+
   const closeMenu = () => setMenuOpen(false);
+
+  async function logout() {
+    await createClient().auth.signOut();
+    setUserEmail(null);
+    closeMenu();
+    router.push("/");
+    router.refresh();
+  }
 
   return (
     <>
@@ -35,8 +56,8 @@ export function Navbar() {
             <Link href="/pricing">Pricing</Link>
           </nav>
           <div className="nav-actions">
-            <Link href="#footer">Login</Link>
-            <Link className="btn btn-gold" href="/courses">Get Started <ArrowRight size={16} /></Link>
+            {userEmail ? <><Link className="user-menu" href="/dashboard"><UserRound size={15} /> {userEmail.split("@")[0]}</Link><button className="nav-logout" onClick={logout} aria-label="Log out"><LogOut size={16} /></button></> : <Link href="/login">Login</Link>}
+            <Link className="btn btn-gold" href={userEmail ? "/dashboard" : "/courses"}>{userEmail ? "Dashboard" : "Get Started"} <ArrowRight size={16} /></Link>
           </div>
           <button className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? "Close menu" : "Open menu"} aria-expanded={menuOpen}>
             {menuOpen ? <X size={23} /> : <Menu size={23} />}
@@ -47,7 +68,7 @@ export function Navbar() {
         <Link href="/courses" onClick={closeMenu}>Courses</Link>
         <Link href="/teachers" onClick={closeMenu}>Teachers</Link>
         <Link href="/pricing" onClick={closeMenu}>Pricing</Link>
-        <Link href="/courses" className="btn btn-gold" onClick={closeMenu}>Get Started <ArrowRight size={18} /></Link>
+        {userEmail ? <><Link href="/dashboard" onClick={closeMenu}>Dashboard</Link><button className="mobile-logout" onClick={logout}><LogOut size={18} /> Log out</button></> : <Link href="/courses" className="btn btn-gold" onClick={closeMenu}>Get Started <ArrowRight size={18} /></Link>}
       </nav>
     </>
   );
