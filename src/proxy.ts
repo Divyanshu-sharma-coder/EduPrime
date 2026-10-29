@@ -34,8 +34,27 @@ export async function proxy(request: NextRequest) {
   const requiresAuth = protectedPrefixes.some((prefix) => isProtectedPath(pathname, prefix));
   const requiresTeacher = isProtectedPath(pathname, "/teacher");
   const requiresAdmin = isProtectedPath(pathname, "/admin");
+  const requiresDeveloper = isProtectedPath(pathname, "/developer");
+  const isEmergencyPage = pathname === "/emergency";
+  const isAuthPath = pathname === "/login" || pathname === "/signup" || pathname === "/forgot-password" || pathname.startsWith("/auth/");
 
-  if (!requiresAuth && !requiresTeacher && !requiresAdmin) {
+  if (!isEmergencyPage) {
+    const { data: platformSettings, error: settingsError } = await supabase
+      .from("platform_settings")
+      .select("emergency_lock")
+      .eq("id", true)
+      .maybeSingle();
+
+    if (settingsError) throw new Error(`Unable to read platform status: ${settingsError.message}`);
+    if (platformSettings?.emergency_lock && !isAuthPath) {
+      if (!user) return NextResponse.redirect(new URL("/emergency", request.url));
+
+      const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+      if (profile?.role !== "developer") return NextResponse.redirect(new URL("/emergency", request.url));
+    }
+  }
+
+  if (!requiresAuth && !requiresTeacher && !requiresAdmin && !requiresDeveloper) {
     return response;
   }
 
@@ -46,14 +65,14 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (requiresTeacher || requiresAdmin) {
+  if (requiresTeacher || requiresAdmin || requiresDeveloper) {
     const { data: profile, error } = await supabase
       .from("profiles")
       .select("role")
       .eq("id", user.id)
       .single();
 
-    if (error || !profile || (requiresAdmin && profile.role !== "admin") || (requiresTeacher && !["teacher", "admin"].includes(profile.role))) {
+    if (error || !profile || (requiresDeveloper && profile.role !== "developer") || (requiresAdmin && !["admin", "developer"].includes(profile.role)) || (requiresTeacher && !["teacher", "admin", "developer"].includes(profile.role))) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   }
@@ -62,5 +81,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/learn/:path*", "/live/:path*", "/test/:path*", "/teacher/:path*", "/admin/:path*"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
