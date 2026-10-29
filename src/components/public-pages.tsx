@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,6 +10,7 @@ import { ArrowLeft, ArrowRight, Check, ChevronDown, ChevronRight, Clock3, Filter
 import { courses, type Course } from "@/data/courses";
 import { Container, Section } from "./ui";
 import { Footer, Navbar } from "./site-shell";
+import { createClient } from "@/lib/supabase/browser";
 
 const filters = ["All", "School", "JEE", "NEET", "Skills"];
 const levels = ["All levels", "Grade 8", "Grade 9", "Grade 10", "JEE Foundation", "NEET Foundation"];
@@ -51,6 +53,33 @@ function CourseVisual({ course }: { course: Course }) {
   return <div className={`detail-visual ${course.accent}`}><span className="catalog-badge">{course.category} · {course.level}</span><span>{course.subject}</span><div className="detail-visual-lines"><i /><i /><i /></div></div>;
 }
 
+function EnrolButton({ slug, mobile = false }: { slug: string; mobile?: boolean }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleClick() {
+    setLoading(true);
+    setError(null);
+    const { data, error: userError } = await createClient().auth.getUser();
+    if (userError) {
+      setError("Please try again.");
+      setLoading(false);
+      return;
+    }
+
+    if (!data.user) {
+      router.push(`/login?next=${encodeURIComponent(`/courses/${slug}#enrol`)}`);
+      return;
+    }
+
+    window.location.hash = "enrol";
+    setLoading(false);
+  }
+
+  return <><button className="btn btn-gold" type="button" onClick={handleClick} disabled={loading}>{loading ? "Checking..." : "Enrol now"}{!mobile && <ArrowRight size={16} />}</button>{error ? <span className="auth-error" role="alert">{error}</span> : null}</>;
+}
+
 function CourseTabs({ course }: { course: Course }) {
   const [tab, setTab] = useState("Overview");
   const tabs = ["Overview", "Syllabus", "Teacher", "Reviews", "FAQ"];
@@ -59,7 +88,7 @@ function CourseTabs({ course }: { course: Course }) {
 
 export function CourseDetailPage({ course }: { course: Course }) {
   const [previewOpen, setPreviewOpen] = useState(false);
-  return <PublicShell><Section className="detail-hero"><Container><Link className="back-link" href="/courses"><ArrowLeft size={16} /> All courses</Link><div className="detail-hero-grid"><div><div className="catalog-rating"><Star size={15} fill="currentColor" /> {course.rating} <span>· {course.students}</span></div><h1>{course.title}</h1><p>{course.description}</p><div className="detail-byline"><div className="teacher-avatar small">{course.teacher.split(" ").map((part) => part[0]).join("")}</div><span>Created by <strong>{course.teacher}</strong></span></div><button className="preview-link" onClick={() => setPreviewOpen(true)}><Play size={16} fill="currentColor" /> Preview a lesson</button></div><CourseVisual course={course} /></div></Container></Section><Section className="detail-content"><Container><div className="detail-layout"><div><CourseTabs course={course} /></div><aside className="enrol-card"><span className="section-kicker">Start learning</span><h2>Build your momentum.</h2><div className="enrol-price">₹{course.price.toLocaleString("en-IN")} <small>one-time</small></div><ul><li><Check size={16} /> {course.duration} of access</li><li><Check size={16} /> Live + recorded lessons</li><li><Check size={16} /> Notes and practice sets</li></ul><Link className="btn btn-gold" href="#enrol">Enrol now <ArrowRight size={16} /></Link></aside></div></Container></Section><div className="mobile-enrol-bar"><strong>₹{course.price.toLocaleString("en-IN")}</strong><Link className="btn btn-gold" href="#enrol">Enrol now</Link></div>{previewOpen && <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Preview lesson"><div className="preview-modal"><button className="modal-close" onClick={() => setPreviewOpen(false)} aria-label="Close preview"><X size={20} /></button><div className="preview-player"><Play size={40} fill="currentColor" /></div><span className="section-kicker">Sample lesson</span><h2>See how {course.subject} comes alive.</h2><p>This placeholder preview is ready for your first sample lesson video.</p></div></div>}</PublicShell>;
+  return <PublicShell><Section className="detail-hero"><Container><Link className="back-link" href="/courses"><ArrowLeft size={16} /> All courses</Link><div className="detail-hero-grid"><div><div className="catalog-rating"><Star size={15} fill="currentColor" /> {course.rating} <span>· {course.students}</span></div><h1>{course.title}</h1><p>{course.description}</p><div className="detail-byline"><div className="teacher-avatar small">{course.teacher.split(" ").map((part) => part[0]).join("")}</div><span>Created by <strong>{course.teacher}</strong></span></div><button className="preview-link" type="button" onClick={() => setPreviewOpen(true)}><Play size={16} fill="currentColor" /> Preview a lesson</button></div><CourseVisual course={course} /></div></Container></Section><Section className="detail-content"><Container><div className="detail-layout"><div><CourseTabs course={course} /></div><aside className="enrol-card" id="enrol"><span className="section-kicker">Start learning</span><h2>Build your momentum.</h2><div className="enrol-price">₹{course.price.toLocaleString("en-IN")} <small>one-time</small></div><ul><li><Check size={16} /> {course.duration} of access</li><li><Check size={16} /> Live + recorded lessons</li><li><Check size={16} /> Notes and practice sets</li></ul><EnrolButton slug={course.slug} /></aside></div></Container></Section><div className="mobile-enrol-bar"><strong>₹{course.price.toLocaleString("en-IN")}</strong><EnrolButton slug={course.slug} mobile /></div>{previewOpen && <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Preview lesson"><div className="preview-modal"><button className="modal-close" type="button" onClick={() => setPreviewOpen(false)} aria-label="Close preview"><X size={20} /></button><div className="preview-player"><Play size={40} fill="currentColor" /></div><span className="section-kicker">Sample lesson</span><h2>See how {course.subject} comes alive.</h2><p>This placeholder preview is ready for your first sample lesson video.</p></div></div>}</PublicShell>;
 }
 
 const contactSchema = z.object({ name: z.string().min(2, "Please enter your name"), email: z.string().email("Enter a valid email address"), message: z.string().min(10, "Tell us a little more (10 characters minimum)") });

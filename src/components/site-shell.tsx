@@ -68,7 +68,7 @@ export function Navbar() {
         <Link href="/courses" onClick={closeMenu}>Courses</Link>
         <Link href="/teachers" onClick={closeMenu}>Teachers</Link>
         <Link href="/pricing" onClick={closeMenu}>Pricing</Link>
-        {userEmail ? <><Link href="/dashboard" onClick={closeMenu}>Dashboard</Link><button className="mobile-logout" onClick={logout}><LogOut size={18} /> Log out</button></> : <Link href="/courses" className="btn btn-gold" onClick={closeMenu}>Get Started <ArrowRight size={18} /></Link>}
+        {userEmail ? <><Link href="/dashboard" onClick={closeMenu}>Dashboard</Link><button className="mobile-logout" onClick={logout}><LogOut size={18} /> Log out</button></> : <><Link href="/login" onClick={closeMenu}>Login</Link><Link href="/signup" onClick={closeMenu}>Sign up</Link><Link href="/courses" className="btn btn-gold" onClick={closeMenu}>Get Started <ArrowRight size={18} /></Link></>}
       </nav>
     </>
   );

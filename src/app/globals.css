@@ -116,6 +116,7 @@
 html { scroll-behavior: smooth; }
 body {
   margin: 0;
+  overflow-x: hidden;
   background: var(--ivory-50);
   color: var(--ink-950);
   font-family: var(--font-inter), Arial, sans-serif;
@@ -151,7 +152,7 @@ button:focus-visible, a:focus-visible {
   transition: transform 250ms var(--ease-premium);
 }
 .site-nav.scrolled { background: rgb(12 35 64 / 92%); backdrop-filter: blur(16px); box-shadow: 0 1px 0 rgb(255 255 255 / 10%); }
-.site-nav.hidden { transform: translateY(-100%); }
+.site-nav.hidden { transform: translateY(0); }
 .nav-inner { display: flex; align-items: center; justify-content: space-between; min-height: 72px; }
 .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--ivory-50); font: 600 1.25rem var(--font-playfair), serif; }
 .brand-mark { display: grid; width: 32px; height: 32px; place-items: center; border: 1px solid var(--gold-500); border-radius: 50%; color: var(--gold-300); font: 700 0.75rem var(--font-jetbrains); }
@@ -163,6 +164,7 @@ button:focus-visible, a:focus-visible {
 .mobile-menu { position: fixed; z-index: 19; inset: 0; display: flex; flex-direction: column; gap: 24px; padding: 104px 24px 24px; background: var(--navy-900); color: var(--ivory-50); transform: translateX(100%); transition: transform 300ms var(--ease-premium); }
 .mobile-menu.open { transform: translateX(0); }
 .mobile-menu a { font: 600 2rem var(--font-playfair), serif; }
+.mobile-menu .btn { width: fit-content; }
 
 .btn { display: inline-flex; min-height: 48px; align-items: center; justify-content: center; gap: 8px; border: 1px solid transparent; border-radius: 12px; padding: 0 20px; font-size: 0.9rem; font-weight: 700; transition: transform 180ms var(--ease-premium); }
 .btn:hover { transform: translateY(-2px); }
@@ -384,6 +386,7 @@ button:focus-visible, a:focus-visible {
   .menu-toggle { display: none; }
   .features-grid { grid-template-columns: repeat(3, 1fr); }
   .mobile-menu { display: none; }
+  .site-nav.hidden { transform: translateY(-100%); }
 }
 @media (min-width: 1440px) {
   .hero-inner { min-height: 820px; }
@@ -393,6 +396,9 @@ button:focus-visible, a:focus-visible {
 }
 
 .public-main { min-height: 60vh; background: var(--ivory-50); }
+.dashboard-welcome { max-width: 620px; border: 1px solid var(--mist-200); border-radius: 20px; padding: 28px; background: white; box-shadow: var(--shadow-navy); }
+.dashboard-welcome h2 { margin: 0 0 10px; color: var(--navy-900); font: 600 2rem var(--font-playfair), serif; }
+.dashboard-welcome p { margin: 0 0 22px; color: var(--slate-600); line-height: 1.7; }
 .public-hero { padding: 150px 0 74px; background: linear-gradient(135deg, var(--navy-900), var(--navy-700)); color: var(--ivory-50); }
 .public-hero h1, .detail-hero h1, .teacher-detail-page h1 { max-width: 760px; margin: 16px 0; font: 600 clamp(2.5rem, 8vw, 4.7rem)/1.05 var(--font-playfair), Georgia, serif; letter-spacing: -0.05em; }
 .public-hero p { max-width: 620px; margin: 0; color: var(--mist-200); font-size: 1.05rem; line-height: 1.7; }

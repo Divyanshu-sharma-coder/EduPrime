@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Eye, EyeOff, LoaderCircle, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/browser";
+import { getSafeNextPath } from "@/lib/auth/redirect";
 
 type AuthMode = "login" | "signup" | "forgot" | "reset";
 
@@ -32,7 +33,7 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(searchParams.get("error") ? "Google sign-in could not be completed. Please try again." : null);
   const [loading, setLoading] = useState(false);
-  const next = searchParams.get("next")?.startsWith("/") ? searchParams.get("next") : "/dashboard";
+  const next = getSafeNextPath(searchParams.get("next"));
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -44,41 +45,47 @@ export function LoginForm() {
       setLoading(false);
       return;
     }
-    router.push(next ?? "/dashboard");
+    router.push(next);
     router.refresh();
   }
 
   async function signInWithGoogle() {
     setLoading(true);
     setError(null);
-    const { error: oauthError } = await createClient().auth.signInWithOAuth({ provider: "google", options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next ?? "/dashboard")}` } });
+    const callbackUrl = new URL("/auth/callback", window.location.origin);
+    callbackUrl.searchParams.set("next", next);
+    const { error: oauthError } = await createClient().auth.signInWithOAuth({ provider: "google", options: { redirectTo: callbackUrl.toString() } });
     if (oauthError) {
       setError(oauthError.message);
       setLoading(false);
     }
   }
 
-  return <AuthShell mode="login"><form className="auth-form" onSubmit={submit}><label>Email address<span className="auth-input"><Mail size={17} /><input type="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" /></span></label><label>Password<span className="auth-input"><LockKeyhole size={17} /><input type={showPassword ? "text" : "password"} required minLength={6} autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Your password" /><button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "Hide password" : "Show password"}>{showPassword ? <EyeOff size={17} /> : <Eye size={17} />}</button></span></label><div className="auth-form-row"><Link href="/forgot-password">Forgot password?</Link></div><ErrorMessage message={error} /><button className="btn btn-gold auth-submit" disabled={loading}>{loading ? <LoaderCircle className="spin" size={17} /> : null}{loading ? "Signing in..." : "Sign in"} <ArrowRight size={16} /></button><div className="auth-divider"><span>or continue with</span></div><button className="btn btn-outline auth-google" type="button" onClick={signInWithGoogle} disabled={loading}>Continue with Google</button><p className="auth-switch">New to EduPrime? <Link href="/signup">Create an account</Link></p></form></AuthShell>;
+  return <AuthShell mode="login"><form className="auth-form" onSubmit={submit}><label>Email address<span className="auth-input"><Mail size={17} /><input type="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" /></span></label><label>Password<span className="auth-input"><LockKeyhole size={17} /><input type={showPassword ? "text" : "password"} required minLength={6} autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Your password" /><button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "Hide password" : "Show password"}>{showPassword ? <EyeOff size={17} /> : <Eye size={17} />}</button></span></label><div className="auth-form-row"><Link href="/forgot-password">Forgot password?</Link></div><ErrorMessage message={error} /><button className="btn btn-gold auth-submit" disabled={loading}>{loading ? <LoaderCircle className="spin" size={17} /> : null}{loading ? "Signing in..." : "Sign in"} <ArrowRight size={16} /></button><div className="auth-divider"><span>or continue with</span></div><button className="btn btn-outline auth-google" type="button" onClick={signInWithGoogle} disabled={loading}>Continue with Google</button><p className="auth-switch">New to EduPrime? <Link href={`/signup?next=${encodeURIComponent(next)}`}>Create an account</Link></p></form></AuthShell>;
 }
 
 export function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const next = getSafeNextPath(searchParams.get("next"));
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
     setError(null);
-    const { data, error: signUpError } = await createClient().auth.signUp({ email, password, options: { data: { name }, emailRedirectTo: `${window.location.origin}/auth/callback` } });
+    const callbackUrl = new URL("/auth/callback", window.location.origin);
+    callbackUrl.searchParams.set("next", next);
+    const { data, error: signUpError } = await createClient().auth.signUp({ email, password, options: { data: { name }, emailRedirectTo: callbackUrl.toString() } });
     if (signUpError) {
       setError(signUpError.message);
     } else if (data.session) {
-      router.push("/dashboard");
+      router.push(next);
       router.refresh();
     } else {
       setMessage("Check your email to verify your account, then sign in.");
