@@ -8,7 +8,7 @@ export default async function TeacherPage() {
 
   let coursesQuery = supabase
     .from("courses")
-    .select("id, title, slug, short_description, description, thumbnail, price, level, language, category_id, status, modules(id, title, position, lessons(id, title, position))");
+    .select("id, title, slug, short_description, description, thumbnail, price, level, language, category_id, status, modules(id, title, position, lessons(id, title, position, mux_upload_id, video_status, video_error))");
   if (role === "teacher") coursesQuery = coursesQuery.eq("teacher_id", user.id);
   const { data: courses, error } = await coursesQuery.order("created_at", { ascending: false });
 

@@ -11,7 +11,7 @@ import { getCourseThumbnailUrl } from "@/lib/courses";
 import { sanitizeCourseHtml } from "@/lib/courses";
 import { revalidateCourseCatalog } from "@/app/teacher/actions";
 
-type Lesson = { id: string; title: string; position: number };
+type Lesson = { id: string; title: string; position: number; mux_upload_id: string | null; video_status: "pending" | "preparing" | "ready" | "errored" | null; video_error: string | null };
 type Module = { id: string; title: string; position: number; lessons: Lesson[] };
 type Course = {
   id: string;
@@ -137,8 +137,8 @@ export function TeacherPanel({ initialCourses }: { initialCourses: Course[] }) {
       return;
     }
     const result = selectedId
-      ? await client.from("courses").update(payload).eq("id", selectedId).select("id, title, slug, short_description, description, thumbnail, price, level, language, category_id, status, modules(id, title, position, lessons(id, title, position))").single()
-      : await client.from("courses").insert({ ...payload, teacher_id: user.id }).select("id, title, slug, short_description, description, thumbnail, price, level, language, category_id, status, modules(id, title, position, lessons(id, title, position))").single();
+      ? await client.from("courses").update(payload).eq("id", selectedId).select("id, title, slug, short_description, description, thumbnail, price, level, language, category_id, status, modules(id, title, position, lessons(id, title, position, mux_upload_id, video_status, video_error))").single()
+      : await client.from("courses").insert({ ...payload, teacher_id: user.id }).select("id, title, slug, short_description, description, thumbnail, price, level, language, category_id, status, modules(id, title, position, lessons(id, title, position, mux_upload_id, video_status, video_error))").single();
 
     if (result.error) {
       setError(result.error.message);
@@ -162,7 +162,7 @@ export function TeacherPanel({ initialCourses }: { initialCourses: Course[] }) {
         thumbnail = path;
       }
       if (oldThumbnail && (thumbnailFile || removeThumbnail)) await client.storage.from("course-thumbnails").remove([oldThumbnail]);
-      const { data: thumbnailCourse, error: thumbnailError } = await client.from("courses").update({ thumbnail }).eq("id", savedCourse.id).select("id, title, slug, short_description, description, thumbnail, price, level, language, category_id, status, modules(id, title, position, lessons(id, title, position))").single();
+      const { data: thumbnailCourse, error: thumbnailError } = await client.from("courses").update({ thumbnail }).eq("id", savedCourse.id).select("id, title, slug, short_description, description, thumbnail, price, level, language, category_id, status, modules(id, title, position, lessons(id, title, position, mux_upload_id, video_status, video_error))").single();
       if (thumbnailError || !thumbnailCourse) {
         setError("Course saved, but the thumbnail reference could not be updated.");
         setSaving(false);
@@ -204,7 +204,7 @@ export function TeacherPanel({ initialCourses }: { initialCourses: Course[] }) {
       return;
     }
     const position = selectedCourse.modules.length;
-    const { data, error: insertError } = await createClient().from("modules").insert({ course_id: selectedCourse.id, title, position }).select("id, title, position, lessons(id, title, position)").single();
+    const { data, error: insertError } = await createClient().from("modules").insert({ course_id: selectedCourse.id, title, position }).select("id, title, position, lessons(id, title, position, mux_upload_id, video_status, video_error)").single();
     if (insertError) {
       setError(insertError.message);
       return;
@@ -223,7 +223,7 @@ export function TeacherPanel({ initialCourses }: { initialCourses: Course[] }) {
       return;
     }
     const position = module.lessons.length;
-    const { data, error: insertError } = await createClient().from("lessons").insert({ module_id: module.id, title, position }).select("id, title, position").single();
+    const { data, error: insertError } = await createClient().from("lessons").insert({ module_id: module.id, title, position }).select("id, title, position, mux_upload_id, video_status, video_error").single();
     if (insertError) {
       setError(insertError.message);
       return;

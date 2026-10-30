@@ -2,8 +2,9 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { Download, Eye, FileText, Pencil, Trash2, Upload, X } from "lucide-react";
+import { LessonVideoPanel } from "@/components/lesson-video-panel";
 
-type Lesson = { id: string; title: string; position: number };
+type Lesson = { id: string; title: string; position: number; mux_upload_id: string | null; video_status: "pending" | "preparing" | "ready" | "errored" | null; video_error: string | null };
 type Module = { id: string; title: string; position: number; lessons: Lesson[] };
 type Course = { id: string; title: string; modules: Module[] };
 type Material = {
@@ -40,10 +41,15 @@ export function StudyMaterialsPanel({ courses }: { courses: Course[] }) {
   const [previewing, setPreviewing] = useState<Material | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [videoUploads, setVideoUploads] = useState<Record<string, string>>({});
 
   const selectedCourse = courses.find((course) => course.id === courseId) ?? null;
   const selectedModule = selectedCourse?.modules.find((module) => module.id === moduleId) ?? null;
   const selectedLesson = selectedModule?.lessons.find((lesson) => lesson.id === lessonId) ?? null;
+  const selectedVideoLesson = selectedLesson ? {
+    ...selectedLesson,
+    mux_upload_id: videoUploads[selectedLesson.id] ?? selectedLesson.mux_upload_id,
+  } : null;
 
   useEffect(() => {
     if (!lessonId) return;
@@ -189,6 +195,10 @@ export function StudyMaterialsPanel({ courses }: { courses: Course[] }) {
       <button className="btn btn-gold" disabled={uploading}><Upload size={16} /> {uploading ? "Uploading..." : "Upload material"}</button>
       <small>PDF, PPT, PPTX, DOC or DOCX · maximum 25 MB</small>
     </form> : <div className="teacher-empty compact"><p>Add a lesson before uploading study materials.</p></div>}
+    <LessonVideoPanel
+      lesson={selectedVideoLesson}
+      onUploadStarted={(nextLessonId, uploadId) => setVideoUploads((current) => ({ ...current, [nextLessonId]: uploadId }))}
+    />
     <div className="materials-list">
       <div className="module-heading"><h3>{selectedLesson ? `Materials for ${selectedLesson.title}` : "Materials"}</h3><span className="teacher-count">{loadingMaterials ? "Loading..." : materials.length}</span></div>
       {!loadingMaterials && materials.length === 0 ? <div className="teacher-empty compact"><FileText size={20} /><p>No materials uploaded for this lesson yet.</p></div> : materials.map((material) => <article className="material-row" key={material.id}>
