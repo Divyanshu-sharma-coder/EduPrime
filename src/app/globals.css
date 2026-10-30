@@ -149,6 +149,28 @@ button:focus-visible, a:focus-visible {
 .teacher-sidebar-footer { display: grid; gap: 12px; margin-top: auto; padding: 20px 12px 0; border-top: 1px solid rgb(255 255 255 / 14%); }
 .teacher-sidebar-footer a, .teacher-sidebar-footer button { display: flex; align-items: center; gap: 9px; color: rgb(255 255 255 / 70%); border: 0; background: none; font: inherit; cursor: pointer; }
 .teacher-content { width: min(100% - 64px, 1180px); margin: 0 auto; padding: 52px 0 80px; }
+.materials-panel { margin-top: 20px; }
+.materials-panel > .teacher-card-heading svg { color: var(--teal-500); }
+.material-select-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 22px; }
+.material-select-grid label, .material-upload-form label, .material-dialog label { display: grid; gap: 7px; color: var(--navy-900); font-size: .82rem; font-weight: 700; }
+.material-select-grid select, .material-upload-form input:not([type="checkbox"]), .material-dialog input { min-width: 0; width: 100%; padding: 11px 12px; border: 1px solid var(--mist-200); border-radius: 8px; background: white; color: var(--ink-950); font: inherit; }
+.material-upload-form { display: grid; grid-template-columns: 1fr 1.4fr auto; align-items: end; gap: 12px; margin-top: 22px; padding: 16px; border: 1px dashed var(--gold-500); border-radius: 12px; background: #fffaf0; }
+.material-upload-form small { grid-column: 1 / -1; color: var(--slate-600); font-size: .75rem; }
+.material-check { display: flex !important; grid-template-columns: auto 1fr; align-items: center; gap: 8px !important; font-weight: 500 !important; }
+.materials-list { margin-top: 28px; }
+.material-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; border-top: 1px solid var(--mist-200); }
+.material-row-info { display: grid; gap: 5px; min-width: 0; }
+.material-row-info strong { overflow: hidden; color: var(--navy-900); text-overflow: ellipsis; white-space: nowrap; }
+.material-row-info small { overflow: hidden; color: var(--slate-600); text-overflow: ellipsis; white-space: nowrap; }
+.material-row-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; }
+.icon-button { display: inline-grid; width: 34px; height: 34px; place-items: center; border: 1px solid var(--mist-200); border-radius: 8px; background: white; color: var(--navy-900); cursor: pointer; }
+.icon-button:hover { border-color: var(--gold-500); }
+.icon-button.danger { color: var(--coral-500); }
+.material-dialog { position: fixed; z-index: 30; inset: 0; display: grid; place-items: center; padding: 20px; background: rgb(12 35 64 / 68%); }
+.material-dialog > .teacher-card { width: min(100%, 620px); max-height: min(90vh, 760px); overflow: auto; }
+.material-dialog form { display: grid; gap: 18px; }
+.material-preview { width: min(100%, 980px) !important; }
+.material-preview iframe { width: 100%; height: min(70vh, 680px); margin-top: 18px; border: 1px solid var(--mist-200); border-radius: 8px; background: var(--ivory-50); }
 .teacher-header { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 36px; }
 .teacher-header h1 { margin: 8px 0 4px; color: var(--navy-900); font: 700 clamp(2rem, 4vw, 3.2rem) var(--font-playfair); }
 .teacher-header p, .teacher-description { color: var(--slate-600); }
@@ -272,6 +294,19 @@ button:focus-visible, a:focus-visible {
 }
 
 @media (max-width: 600px) {
+  .teacher-app { display: block; }
+  .teacher-sidebar { min-height: auto; padding: 18px; }
+  .teacher-brand { padding-bottom: 20px; }
+  .teacher-sidebar-footer { margin-top: 20px; }
+  .teacher-content { width: min(100% - 28px, 1180px); padding: 28px 0 52px; }
+  .teacher-header { align-items: start; flex-direction: column; margin-bottom: 24px; }
+  .teacher-stats { gap: 8px; }
+  .teacher-stats > div { padding: 14px; }
+  .teacher-layout { grid-template-columns: 1fr; }
+  .material-select-grid, .material-upload-form { grid-template-columns: 1fr; }
+  .material-upload-form small { grid-column: auto; }
+  .material-row { align-items: start; flex-direction: column; }
+  .material-row-actions { justify-content: flex-start; }
   .control-page { padding: 32px 0 56px; }
   .control-header { align-items: start; flex-direction: column; }
   .control-stats { grid-template-columns: repeat(2, 1fr); }
