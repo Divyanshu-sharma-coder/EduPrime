@@ -41,9 +41,21 @@ export function initials(name: string) {
 }
 
 export function sanitizeCourseHtml(value: string) {
-  return value
-    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
-    .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, "")
-    .replace(/\son[a-z]+\s*=\s*(".*?"|'.*?'|[^\s>]+)/gi, "")
-    .replace(/javascript\s*:/gi, "");
+  const withoutUnsafeBlocks = value
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/<(script|style|iframe|object|embed|form|svg|math)[^>]*>[\s\S]*?<\/\1>/gi, "")
+    .replace(/<(script|style|iframe|object|embed|form|svg|math)[^>]*\/?>/gi, "");
+
+  return withoutUnsafeBlocks.replace(/<\/?([a-z0-9]+)([^>]*)>/gi, (tag, name: string, attributes: string) => {
+    const normalizedName = name.toLowerCase();
+    const allowedTags = ["h1", "h2", "h3", "h4", "h5", "h6", "p", "strong", "b", "em", "i", "ul", "ol", "li", "br", "a"];
+    if (!allowedTags.includes(normalizedName)) return "";
+    if (tag.startsWith("</")) return `</${normalizedName}>`;
+    if (normalizedName !== "a") return `<${normalizedName}>`;
+
+    const hrefMatch = attributes.match(/\bhref\s*=\s*["']([^"']+)["']/i);
+    const href = hrefMatch?.[1] ?? "";
+    if (!/^(https?:|mailto:|\/|#)/i.test(href) || /^javascript:/i.test(href)) return "<a>";
+    return `<a href="${href.replace(/"/g, "&quot;")}" target="_blank" rel="noopener noreferrer">`;
+  });
 }

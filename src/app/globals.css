@@ -197,6 +197,8 @@ button:focus-visible, a:focus-visible {
 .teacher-description { margin: 20px 0 28px; line-height: 1.6; }
 .module-heading { padding-top: 20px; border-top: 1px solid var(--mist-200); }
 .module-heading h3 { margin: 0; color: var(--navy-900); font-size: 1rem; }
+.inline-create-form { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; width: 100%; }
+.inline-create-form input { min-width: 220px; padding: 9px 10px; border: 1px solid var(--mist-200); border-radius: 8px; background: white; color: var(--ink-950); font: inherit; }
 .module-list { display: grid; gap: 14px; margin-top: 16px; }
 .module-item { overflow: hidden; border: 1px solid var(--mist-200); border-radius: 10px; }
 .module-title { padding: 13px 15px; background: var(--ivory-50); color: var(--navy-900); }
