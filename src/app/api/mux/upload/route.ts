@@ -2,8 +2,6 @@ import { z } from "zod";
 import { cancelMuxDirectUpload, createMuxDirectUpload } from "@/lib/mux/server";
 import { createClient } from "@/lib/supabase/server";
 
-export const runtime = "nodejs";
-
 const requestSchema = z.object({
   lessonId: z.string().uuid(),
 });
