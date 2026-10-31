@@ -36,9 +36,10 @@ export async function proxy(request: NextRequest) {
   const requiresAdmin = isProtectedPath(pathname, "/admin");
   const requiresDeveloper = isProtectedPath(pathname, "/developer");
   const isEmergencyPage = pathname === "/emergency";
+  const isMuxWebhook = pathname === "/api/webhooks/mux";
   const isAuthPath = pathname === "/login" || pathname === "/signup" || pathname === "/forgot-password" || pathname.startsWith("/auth/");
 
-  if (!isEmergencyPage) {
+  if (!isEmergencyPage && !isMuxWebhook) {
     const { data: platformSettings, error: settingsError } = await supabase
       .from("platform_settings")
       .select("emergency_lock")

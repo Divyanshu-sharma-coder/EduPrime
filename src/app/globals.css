@@ -291,6 +291,42 @@ button:focus-visible, a:focus-visible {
 .control-card-heading { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
 .control-card-heading h2 { margin: 6px 0 0; color: var(--navy-900); font-size: 1.35rem; }
 .control-card > p { color: var(--slate-600); line-height: 1.5; }
+.developer-search { display: grid; gap: 8px; margin-top: 20px; }
+.developer-search label { color: var(--navy-900); font-size: .84rem; font-weight: 600; }
+.developer-search > div { display: flex; gap: 10px; }
+.developer-search input { min-width: 0; flex: 1; padding: 11px 12px; border: 1px solid var(--mist-200); border-radius: 8px; font: inherit; }
+.developer-course-list { display: grid; gap: 8px; margin-top: 20px; }
+.developer-course-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px; border: 1px solid var(--mist-200); border-radius: 10px; color: var(--navy-900); }
+.developer-course-row:hover, .developer-course-row.selected { border-color: var(--teal-500); background: #f3fbf9; }
+.developer-course-row > span:first-child, .developer-course-meta { display: grid; gap: 5px; }
+.developer-course-row small, .inspector-module-heading span, .inspector-lesson small, .inspector-muted { color: var(--slate-600); }
+.developer-course-meta { justify-items: end; }
+.developer-empty { margin: 20px 0 0; }
+.course-inspector { margin-top: 20px; }
+.course-inspector .control-card-heading p { margin: 6px 0 0; color: var(--slate-600); }
+.inspector-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 22px 0; }
+.inspector-summary > div { display: grid; gap: 5px; padding: 12px; border-radius: 10px; background: var(--mist-100); }
+.inspector-summary span, .video-diagnostics span, .inspector-materials > span { color: var(--slate-600); font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; }
+.inspector-summary strong { color: var(--navy-900); font-size: .8rem; }
+.inspector-description { white-space: pre-wrap; }
+.inspector-modules { display: grid; gap: 14px; margin-top: 22px; }
+.inspector-module { padding: 16px; border: 1px solid var(--mist-200); border-radius: 12px; }
+.inspector-module-heading, .inspector-lesson-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.inspector-module-heading h3 { margin: 0; color: var(--navy-900); font-size: 1rem; }
+.inspector-module-heading span { font-size: .78rem; }
+.inspector-lesson { display: grid; gap: 12px; margin-top: 12px; padding: 14px; border-radius: 10px; background: var(--mist-100); }
+.inspector-lesson-heading > div { display: grid; gap: 5px; }
+.video-status { padding: 5px 8px; border-radius: 999px; color: var(--slate-600); background: var(--mist-200); font: 700 .62rem var(--font-jetbrains); text-transform: uppercase; }
+.video-status.ready { color: #176d4d; background: #d9f3e7; }
+.video-status.errored { color: #9c2c20; background: #fce2de; }
+.video-status.pending, .video-status.preparing { color: #8a5a00; background: #fff0c7; }
+.video-diagnostics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.video-diagnostics > div { display: grid; gap: 5px; min-width: 0; }
+.video-diagnostics code { overflow-wrap: anywhere; color: var(--navy-900); font-size: .72rem; }
+.video-diagnostics .video-error { grid-column: 1 / -1; }
+.video-diagnostics .video-error code { color: #9c2c20; }
+.inspector-materials { display: grid; gap: 5px; padding-top: 4px; }
+.inspector-materials small { color: var(--navy-900); }
 .emergency-status { padding: 5px 8px; border-radius: 999px; font: 700 .62rem var(--font-jetbrains); }
 .emergency-status.locked { color: #9c2c20; background: #fce2de; }
 .emergency-status.ready { color: #176d4d; background: #d9f3e7; }
@@ -324,6 +360,8 @@ button:focus-visible, a:focus-visible {
 
 @media (max-width: 900px) {
   .control-stats { grid-template-columns: repeat(3, 1fr); }
+  .inspector-summary { grid-template-columns: repeat(2, 1fr); }
+  .video-diagnostics { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 600px) {
@@ -344,6 +382,11 @@ button:focus-visible, a:focus-visible {
   .control-header { align-items: start; flex-direction: column; }
   .control-stats { grid-template-columns: repeat(2, 1fr); }
   .control-card { padding: 18px; }
+  .developer-search > div { align-items: stretch; flex-direction: column; }
+  .developer-course-row { align-items: start; flex-direction: column; }
+  .developer-course-meta { justify-items: start; }
+  .inspector-summary, .video-diagnostics { grid-template-columns: 1fr; }
+  .video-diagnostics .video-error { grid-column: auto; }
   .emergency-control-card form { align-items: stretch; flex-direction: column; }
   .control-links { grid-template-columns: 1fr; }
 }

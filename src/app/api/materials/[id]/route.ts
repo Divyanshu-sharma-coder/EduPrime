@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { requireServerRoles } from "@/lib/auth/authorization";
 
 const SIGNED_URL_SECONDS = 10 * 60;
 
@@ -26,6 +27,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 }
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await requireServerRoles(["teacher", "admin", "developer"]);
+  if ("error" in auth) return Response.json({ error: auth.error }, { status: 403 });
   const { id } = await params;
   const result = await getMaterial(id);
   if ("error" in result) return Response.json({ error: result.error }, { status: 404 });
@@ -39,18 +42,20 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     title: body.title.trim(),
     downloadable: body.downloadable,
   }).eq("id", id).select("id, title, file_name, file_type, file_size, storage_path, downloadable, created_at, updated_at").single();
-  if (error || !data) return Response.json({ error: error?.message ?? "Unable to update material." }, { status: 400 });
+  if (error || !data) return Response.json({ error: "Unable to update material." }, { status: 400 });
   return Response.json({ material: data });
 }
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await requireServerRoles(["teacher", "admin", "developer"]);
+  if ("error" in auth) return Response.json({ error: auth.error }, { status: 403 });
   const { id } = await params;
   const result = await getMaterial(id);
   if ("error" in result) return Response.json({ error: result.error }, { status: 404 });
 
   const { error: storageError } = await result.supabase.storage.from("study-materials").remove([result.material.storage_path]);
-  if (storageError) return Response.json({ error: storageError.message }, { status: 400 });
+  if (storageError) return Response.json({ error: "Unable to remove the material file." }, { status: 400 });
   const { error } = await result.supabase.from("materials").delete().eq("id", id);
-  if (error) return Response.json({ error: error.message }, { status: 400 });
+  if (error) return Response.json({ error: "Unable to remove the material." }, { status: 400 });
   return Response.json({ ok: true });
 }

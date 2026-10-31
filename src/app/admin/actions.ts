@@ -1,18 +1,17 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { requireServerRoles } from "@/lib/auth/authorization";
 
 export async function changeUserRole(userId: string, role: "student" | "teacher" | "admin" | "developer") {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "You must be signed in." };
+  const auth = await requireServerRoles(["admin", "developer"]);
+  if ("error" in auth) return { error: auth.error };
 
-  const { error } = await supabase.rpc("set_user_role", {
+  const { error } = await auth.supabase.rpc("set_user_role", {
     target_user_id: userId,
     requested_role: role,
   });
-  if (error) return { error: error.message };
+  if (error) return { error: "Unable to change the user's role." };
 
   revalidatePath("/admin");
   revalidatePath("/developer");

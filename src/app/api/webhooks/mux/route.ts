@@ -1,5 +1,6 @@
 import Mux from "@mux/ts";
 import { createClient } from "@supabase/supabase-js";
+import { revalidatePath } from "next/cache";
 
 function getServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -49,6 +50,10 @@ function getAssetErrorMessage(errors: { type?: string; messages?: string[] } | u
   return `Mux asset processing failed${type ? ` (${type})` : ""}${detail}`;
 }
 
+function newerEventFilter(eventCreatedAt: string) {
+  return `video_event_created_at.is.null,video_event_created_at.lt.${eventCreatedAt}`;
+}
+
 export async function POST(request: Request) {
   const webhookSecret = process.env.MUX_WEBHOOK_SECRET;
   if (!webhookSecret) {
@@ -91,11 +96,13 @@ export async function POST(request: Request) {
 
     const { error } = await supabase
       .from("lessons")
-      .update({ video_status: "pending" })
+      .update({ video_status: "pending", video_event_created_at: event.created_at })
       .eq("id", lesson.data.id)
-      .neq("video_status", "ready");
+      .neq("video_status", "ready")
+      .or(newerEventFilter(event.created_at));
     if (error) return Response.json({ error: "Unable to update the lesson." }, { status: 500 });
 
+    revalidatePath("/teacher");
     return Response.json({ received: true, updated: true });
   }
 
@@ -117,10 +124,13 @@ export async function POST(request: Request) {
         video_status: "ready",
         video_ready_at: new Date().toISOString(),
         video_error: null,
+        video_event_created_at: event.created_at,
       })
-      .eq("id", lesson.data.id);
+      .eq("id", lesson.data.id)
+      .or(newerEventFilter(event.created_at));
     if (error) return Response.json({ error: "Unable to update the lesson." }, { status: 500 });
 
+    revalidatePath("/teacher");
     return Response.json({ received: true, updated: true });
   }
 
@@ -129,9 +139,13 @@ export async function POST(request: Request) {
     .update({
       video_status: "errored",
       video_error: getAssetErrorMessage(event.data.errors),
+      video_event_created_at: event.created_at,
     })
-    .eq("id", lesson.data.id);
+    .eq("id", lesson.data.id)
+    .neq("video_status", "ready")
+    .or(newerEventFilter(event.created_at));
   if (error) return Response.json({ error: "Unable to update the lesson." }, { status: 500 });
 
+  revalidatePath("/teacher");
   return Response.json({ received: true, updated: true });
 }

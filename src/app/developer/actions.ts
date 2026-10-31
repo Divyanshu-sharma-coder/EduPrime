@@ -2,7 +2,7 @@
 
 import { scryptSync, timingSafeEqual } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { requireServerRoles } from "@/lib/auth/authorization";
 
 function matchesConfiguredSecret(candidate: string, variableName: "DEVELOPER_LOCK_PASSWORD" | "DEVELOPER_UNLOCK_PASSWORD") {
   const configured = process.env[variableName];
@@ -14,28 +14,25 @@ function matchesConfiguredSecret(candidate: string, variableName: "DEVELOPER_LOC
 }
 
 async function requireDeveloper() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { supabase, error: "You must be signed in." };
-  const { data: profile, error } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  if (error || profile?.role !== "developer") return { supabase, error: "Developer access is required." };
-  return { supabase, user };
+  const auth = await requireServerRoles(["developer"]);
+  if ("error" in auth) return auth;
+  return auth;
 }
 
 export async function setEmergencyMode(password: string, locked: boolean) {
   const auth = await requireDeveloper();
-  if (auth.error) return { error: auth.error };
-  if (!password) return { error: "Enter the password to continue." };
+  if ("error" in auth) return { error: auth.error };
+  if (typeof password !== "string" || !password) return { error: "Enter the password to continue." };
 
   try {
     const variableName = locked ? "DEVELOPER_LOCK_PASSWORD" : "DEVELOPER_UNLOCK_PASSWORD";
     if (!matchesConfiguredSecret(password, variableName)) return { error: "The password is incorrect." };
-  } catch (error) {
-    return { error: error instanceof Error ? error.message : "Emergency mode is not configured." };
+  } catch {
+    return { error: "Emergency mode is not configured." };
   }
 
   const { error } = await auth.supabase.rpc("set_emergency_lock", { locked });
-  if (error) return { error: error.message };
+  if (error) return { error: "Unable to update emergency mode." };
   revalidatePath("/", "layout");
   revalidatePath("/developer");
   return { ok: true, locked };

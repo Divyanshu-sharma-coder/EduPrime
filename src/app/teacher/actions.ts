@@ -1,14 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { requireServerRoles } from "@/lib/auth/authorization";
 
 export async function revalidateCourseCatalog(slug?: string) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
-  if (!profile || !["teacher", "admin", "developer"].includes(profile.role)) return;
+  const auth = await requireServerRoles(["teacher", "admin", "developer"]);
+  if ("error" in auth) return;
   revalidatePath("/courses");
   if (slug) revalidatePath(`/courses/${slug}`);
 }
