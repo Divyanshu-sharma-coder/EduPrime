@@ -196,6 +196,7 @@ export function StudyMaterialsPanel({ courses }: { courses: Course[] }) {
       <small>PDF, PPT, PPTX, DOC or DOCX · maximum 25 MB</small>
     </form> : <div className="teacher-empty compact"><p>Add a lesson before uploading study materials.</p></div>}
     <LessonVideoPanel
+      key={selectedLesson?.id ?? "no-lesson"}
       lesson={selectedVideoLesson}
       onUploadStarted={(nextLessonId, uploadId) => setVideoUploads((current) => ({ ...current, [nextLessonId]: uploadId }))}
     />

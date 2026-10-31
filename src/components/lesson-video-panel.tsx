@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Upload, Video } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CheckCircle2, FileVideo, LoaderCircle, Upload, Video } from "lucide-react";
 
 type VideoStatus = "pending" | "preparing" | "ready" | "errored" | null;
 type Lesson = {
@@ -24,12 +24,29 @@ function isVideoFile(file: File) {
   return ACCEPTED_VIDEO_TYPES.includes(file.type) || ACCEPTED_VIDEO_EXTENSIONS.includes(extension);
 }
 
-function uploadToMux(uploadUrl: string, file: File, onProgress: (progress: number) => void) {
+function formatFileSize(bytes: number) {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.ceil(bytes / 1024))} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+}
+
+function formatDate(value: string | null | undefined) {
+  return value ? new Date(value).toLocaleString() : null;
+}
+
+function validateVideoFile(file: File) {
+  if (!isVideoFile(file)) return "Choose an MP4, MOV, or WebM video.";
+  if (file.size === 0) return "This file is empty. Choose a video with content.";
+  if (file.size > MAX_VIDEO_SIZE) return "Videos must be smaller than 2 GB.";
+  return null;
+}
+
+function uploadToMux(uploadUrl: string, file: File, onProgress: (loaded: number, total: number) => void) {
   return new Promise<void>((resolve, reject) => {
     const request = new XMLHttpRequest();
     request.open("PUT", uploadUrl);
     request.upload.addEventListener("progress", (event) => {
-      if (event.lengthComputable) onProgress(Math.round((event.loaded / event.total) * 100));
+      if (event.lengthComputable) onProgress(event.loaded, event.total);
     });
     request.addEventListener("load", () => {
       if (request.status >= 200 && request.status < 300) resolve();
@@ -41,12 +58,12 @@ function uploadToMux(uploadUrl: string, file: File, onProgress: (progress: numbe
   });
 }
 
-function statusLabel(lesson: Lesson, uploading: boolean, progress: number) {
-  if (uploading) return `Uploading video — ${progress}%`;
-  if (lesson.video_status === "errored") return "Video processing failed";
-  if (lesson.video_status === "ready") return "Video ready";
-  if (lesson.mux_upload_id || lesson.video_status === "pending" || lesson.video_status === "preparing") return "Mux is processing";
-  return "No video uploaded";
+function lifecycleState(lesson: Lesson, uploading: boolean, uploaded: boolean) {
+  if (uploading) return "uploading";
+  if (lesson.video_status === "ready") return "ready";
+  if (lesson.video_status === "errored") return "errored";
+  if (uploaded || lesson.mux_upload_id || lesson.video_status === "pending" || lesson.video_status === "preparing") return "processing";
+  return "empty";
 }
 
 export function LessonVideoPanel({
@@ -56,8 +73,12 @@ export function LessonVideoPanel({
   lesson: Lesson | null;
   onUploadStarted: (lessonId: string, uploadId: string) => void;
 }) {
+  const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [uploadedBytes, setUploadedBytes] = useState(0);
+  const [totalBytes, setTotalBytes] = useState(0);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [dragging, setDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploaded, setUploaded] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
@@ -130,19 +151,16 @@ export function LessonVideoPanel({
 
   async function uploadVideo(file: File | undefined) {
     if (!lesson || !file) return;
-    setError(null);
+    const validationError = validateVideoFile(file);
+    setSelectedFile(file);
+    setError(validationError);
     setUploaded(false);
-    if (!isVideoFile(file)) {
-      setError("Choose an MP4, MOV, or WebM video.");
-      return;
-    }
-    if (file.size === 0 || file.size > MAX_VIDEO_SIZE) {
-      setError("Videos must be smaller than 2 GB.");
-      return;
-    }
+    setRefreshError(null);
+    if (validationError) return;
 
     setUploading(true);
-    setProgress(0);
+    setUploadedBytes(0);
+    setTotalBytes(file.size);
     try {
       const response = await fetch("/api/mux/upload", {
         method: "POST",
@@ -155,7 +173,10 @@ export function LessonVideoPanel({
       }
 
       onUploadStarted(lesson.id, body.uploadId);
-      await uploadToMux(body.uploadUrl, file, setProgress);
+      await uploadToMux(body.uploadUrl, file, (loaded, total) => {
+        setUploadedBytes(loaded);
+        setTotalBytes(total);
+      });
       setUploaded(true);
     } catch (reason: unknown) {
       setError(reason instanceof Error ? reason.message : "Unable to upload the video.");
@@ -164,26 +185,36 @@ export function LessonVideoPanel({
     }
   }
 
+  const currentState = displayLesson ? lifecycleState(displayLesson, uploading, uploaded) : "empty";
+  const uploadPercent = totalBytes ? Math.round((uploadedBytes / totalBytes) * 100) : 0;
   const uploadExists = Boolean(displayLesson?.mux_upload_id);
+  const readyAt = formatDate(displayLesson?.video_ready_at);
 
-  return <section className="teacher-card lesson-video-panel">
+  return <section className="teacher-card lesson-video-panel" aria-labelledby="lesson-video-heading">
     <div className="teacher-card-heading">
-      <div><span className="section-kicker">Lesson Video</span><h2>{lesson ? lesson.title : "Select a lesson"}</h2></div>
+      <div><span className="section-kicker">Lesson video</span><h2 id="lesson-video-heading">{lesson ? lesson.title : "Select a lesson"}</h2></div>
       <Video size={24} aria-hidden="true" />
     </div>
-    {!displayLesson ? <p className="teacher-description">Select a lesson to manage its video.</p> : <>
-      <p className="teacher-description">Upload a lesson recording directly to Mux. Mux will process it before it can be watched.</p>
-      <div className="lesson-video-status"><span>Status</span><strong>{statusLabel(displayLesson, uploading, progress)}</strong></div>
-      {displayLesson.video_error ? <p className="teacher-error" role="alert">{displayLesson.video_error}</p> : null}
+    {!displayLesson ? <div className="video-empty-state"><FileVideo size={30} aria-hidden="true" /><strong>No lesson selected</strong><p>Select a lesson to manage its video.</p></div> : <>
+      <div className="video-lifecycle" aria-label="Video upload lifecycle">
+        {(["empty", "uploading", "processing", "ready"] as const).map((state, index) => <div className={`video-lifecycle-step ${currentState === state ? "active" : ""} ${currentState === "ready" && state !== "ready" ? "complete" : ""}`} key={state}><span>{currentState === "ready" && state !== "ready" ? <CheckCircle2 size={14} /> : index + 1}</span><small>{state === "empty" ? "No video" : state === "uploading" ? "Uploading" : state === "processing" ? "Processing" : "Ready"}</small></div>)}
+      </div>
+
+      {currentState === "empty" ? <div className="video-empty-state"><FileVideo size={30} aria-hidden="true" /><strong>No video uploaded</strong><p>Upload an MP4, MOV, or WebM video. Maximum file size: 2 GB.</p><button className="btn btn-gold" type="button" onClick={() => inputRef.current?.click()}><Upload size={16} /> Upload video</button></div> : null}
+
+      {currentState === "uploading" ? <div className="video-state-card uploading"><div className="video-state-heading"><Upload size={20} /><div><strong>Uploading video...</strong><span>Uploading directly to Mux</span></div><b>{uploadPercent}%</b></div><div className="video-file-summary"><FileVideo size={18} /><span><strong>{selectedFile?.name}</strong><small>{formatFileSize(uploadedBytes)} of {formatFileSize(totalBytes)}</small></span></div><progress value={uploadPercent} max="100" aria-label={`Uploading ${uploadPercent}%`} /><p className="video-state-help">Keep this window open until the upload reaches 100%.</p></div> : null}
+
+      {currentState === "processing" ? <div className="video-state-card processing" role="status" aria-live="polite"><div className="video-state-heading"><LoaderCircle className="video-spinner" size={20} /><div><strong>{uploaded ? "Upload complete" : "Video is processing"}</strong><span>Mux is preparing the video for playback</span></div></div>{selectedFile ? <div className="video-file-summary"><FileVideo size={18} /><span><strong>{selectedFile.name}</strong><small>{formatFileSize(selectedFile.size)} · Browser upload finished</small></span></div> : null}<div className="video-indeterminate-progress" /><p className="video-state-help">Processing time varies by video length. This status updates automatically from Mux.</p></div> : null}
+
+      {currentState === "ready" ? <div className="video-state-card ready" role="status" aria-live="polite"><div className="video-state-heading"><CheckCircle2 size={22} /><div><strong>Video ready</strong><span>Playback is ready for this lesson</span></div></div>{readyAt ? <p className="video-state-help">Ready {readyAt}</p> : null}{displayLesson.mux_playback_id ? <div className="video-id-row"><span>Playback ID</span><code>{displayLesson.mux_playback_id}</code></div> : null}<p className="video-state-help">Replacement uploads are not currently supported for this lesson.</p></div> : null}
+
+      {currentState === "errored" ? <div className="video-state-card errored" role="alert"><div className="video-state-heading"><span className="video-error-icon">!</span><div><strong>Video processing failed</strong><span>Mux could not prepare this video</span></div></div><p className="video-error-detail">{displayLesson.video_error ?? "No additional error details are available."}</p><p className="video-state-help">This lesson already has an upload record. Replacement uploads are not currently supported.</p></div> : null}
+
+      {refreshError ? <p className="video-sync-notice" role="status">{refreshError}</p> : null}
       {error ? <p className="teacher-error" role="alert">{error}</p> : null}
-      {refreshError ? <p className="teacher-description" role="status">{refreshError}</p> : null}
-      {uploaded && displayLesson.video_status !== "ready" && displayLesson.video_status !== "errored" ? <p className="teacher-notice" role="status">Upload complete. Mux is processing the video...</p> : null}
-      {uploadExists ? <p className="teacher-description">This lesson already has a video. Status: {statusLabel(displayLesson, false, progress)}. A new upload cannot replace it.</p> : <label className="video-upload-picker">
-        <span className="btn btn-gold"><Upload size={16} /> Choose video</span>
-        <input type="file" accept={ACCEPTED_VIDEO_TYPES.join(",")} disabled={uploading} onChange={(event) => { void uploadVideo(event.target.files?.[0]); event.currentTarget.value = ""; }} />
-        <small>MP4, MOV, or WebM · maximum 2 GB</small>
-      </label>}
-      {uploading ? <progress className="video-upload-progress" value={progress} max="100" aria-label={`Video upload ${progress}%`} /> : null}
+      {uploadExists && currentState !== "uploading" ? <p className="video-existing-note">This lesson already has a video. A new upload cannot replace it.</p> : null}
+      {!uploadExists ? <div className={`video-dropzone ${dragging ? "dragging" : ""}`} onDragEnter={(event) => { event.preventDefault(); setDragging(true); }} onDragOver={(event) => event.preventDefault()} onDragLeave={() => setDragging(false)} onDrop={(event) => { event.preventDefault(); setDragging(false); void uploadVideo(event.dataTransfer.files[0]); }}><FileVideo size={22} aria-hidden="true" /><strong>Drop a video here</strong><span>or</span><button className="btn btn-outline" type="button" onClick={() => inputRef.current?.click()} disabled={uploading}>Choose video</button><small>MP4, MOV, or WebM · maximum 2 GB</small></div> : null}
+      <input ref={inputRef} className="video-file-input" type="file" accept={ACCEPTED_VIDEO_TYPES.join(",")} disabled={uploading || uploadExists} onChange={(event) => { void uploadVideo(event.target.files?.[0]); event.currentTarget.value = ""; }} aria-label="Choose lesson video" />
     </>}
   </section>;
 }
