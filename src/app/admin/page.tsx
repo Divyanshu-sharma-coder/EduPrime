@@ -6,9 +6,11 @@ export const instant = false;
 
 export default async function AdminPage() {
   const { supabase } = await requireRole("admin");
-  const { data: profiles, error } = await supabase.from("profiles").select("id, name, role").order("created_at", { ascending: false });
+  const [{ data: profiles, error }, { data: activity, error: activityError }] = await Promise.all([
+    supabase.from("profiles").select("id, name, role").order("created_at", { ascending: false }),
+    supabase.from("platform_activity").select("id, action, created_at, details").order("created_at", { ascending: false }).limit(12),
+  ]);
   if (error) throw new Error(`Unable to load users: ${error.message}`);
-  const { data: activity, error: activityError } = await supabase.from("platform_activity").select("id, action, created_at, details").order("created_at", { ascending: false }).limit(12);
   if (activityError) throw new Error(`Unable to load platform activity: ${activityError.message}`);
 
   const users = (profiles ?? []).map((profile) => ({ ...profile, role: profile.role as "developer" | "admin" | "teacher" | "student", email: `User ID: ${profile.id}` }));

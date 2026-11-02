@@ -21,32 +21,42 @@ function videoStatusLabel(status: string | null) {
 
 export default async function DeveloperPage({ searchParams }: { searchParams: Promise<DeveloperSearchParams> }) {
   const { supabase } = await requireRole("developer");
-  const { data: profiles, error: profilesError } = await supabase.from("profiles").select("role");
-  const { count: courseCount, error: coursesError } = await supabase.from("courses").select("id", { count: "exact", head: true });
-  const { count: publishedCourseCount, error: publishedError } = await supabase.from("courses").select("id", { count: "exact", head: true }).eq("status", "published");
-  const { data: setting, error: settingsError } = await supabase.from("platform_settings").select("emergency_lock").eq("id", true).single();
-  if (profilesError || coursesError || publishedError || settingsError) throw new Error("Unable to load developer platform status.");
-  const counts = (profiles ?? []).reduce((result, profile) => ({ ...result, [profile.role]: (result[profile.role as keyof typeof result] ?? 0) + 1 }), { student: 0, teacher: 0, admin: 0, developer: 0 });
   const params = await searchParams;
   const initialMode = params.emergency === "lock" || params.emergency === "unlock" ? params.emergency : undefined;
   const search = params.q?.trim() ?? "";
+  const selectedCourseId = params.course;
+  const [
+    { data: profiles, error: profilesError },
+    { count: courseCount, error: coursesError },
+    { count: publishedCourseCount, error: publishedError },
+    { data: setting, error: settingsError },
+  ] = await Promise.all([
+    supabase.from("profiles").select("role"),
+    supabase.from("courses").select("id", { count: "exact", head: true }),
+    supabase.from("courses").select("id", { count: "exact", head: true }).eq("status", "published"),
+    supabase.from("platform_settings").select("emergency_lock").eq("id", true).single(),
+  ]);
+  if (profilesError || coursesError || publishedError || settingsError) throw new Error("Unable to load developer platform status.");
+  const counts = (profiles ?? []).reduce((result, profile) => ({ ...result, [profile.role]: (result[profile.role as keyof typeof result] ?? 0) + 1 }), { student: 0, teacher: 0, admin: 0, developer: 0 });
   let coursesQuery = supabase
     .from("courses")
     .select("id, title, slug, status, teacher_id, modules(id, lessons(id, video_status))")
     .order("created_at", { ascending: false })
     .limit(50);
   if (search) coursesQuery = coursesQuery.or(`title.ilike.%${search}%,slug.ilike.%${search}%`);
-  const { data: courses, error: courseListError } = await coursesQuery;
+  const [courseListResult, selectedCourseResult] = await Promise.all([
+    coursesQuery,
+    selectedCourseId
+      ? supabase
+        .from("courses")
+        .select("id, title, slug, description, status, teacher_id, created_at, updated_at, modules(id, title, position, lessons(id, title, position, is_preview, mux_upload_id, mux_asset_id, mux_playback_id, video_status, video_error, video_ready_at))")
+        .eq("id", selectedCourseId)
+        .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+  ]);
+  const { data: courses, error: courseListError } = courseListResult;
   if (courseListError) throw new Error("Unable to load courses for inspection.");
-
-  const selectedCourseId = params.course;
-  const { data: selectedCourse, error: selectedCourseError } = selectedCourseId
-    ? await supabase
-      .from("courses")
-      .select("id, title, slug, description, status, teacher_id, created_at, updated_at, modules(id, title, position, lessons(id, title, position, is_preview, mux_upload_id, mux_asset_id, mux_playback_id, video_status, video_error, video_ready_at))")
-      .eq("id", selectedCourseId)
-      .maybeSingle()
-    : { data: null, error: null };
+  const { data: selectedCourse, error: selectedCourseError } = selectedCourseResult;
   if (selectedCourseError) throw new Error("Unable to load the selected course.");
 
   const teacherIds = [...new Set((courses ?? []).map((course) => course.teacher_id).concat(selectedCourse?.teacher_id ?? []))];

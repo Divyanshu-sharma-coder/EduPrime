@@ -8,7 +8,6 @@ export const instant = false;
 export default async function CourseRoute({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
   const query = supabase
     .from("courses")
     .select("id, slug, title, short_description, description, thumbnail, price, level, language, category_id, teacher_id, status, modules(id, title, position, lessons(id, title, position))")
@@ -18,6 +17,7 @@ export default async function CourseRoute({ params }: { params: Promise<{ slug: 
   if (error || !course) notFound();
 
   if (course.status !== "published") {
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) notFound();
     const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
     if (course.teacher_id !== user.id && !["admin", "developer"].includes(profile?.role ?? "")) notFound();
