@@ -2,7 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { Container } from "@/components/ui";
-import { Footer, Navbar } from "@/components/site-shell";
+import { Footer } from "@/components/footer";
+import { Navbar } from "@/components/site-shell";
 import { createClient } from "@/lib/supabase/server";
 
 export const instant = false;

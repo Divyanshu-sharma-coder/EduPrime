@@ -12,7 +12,8 @@ import { courses } from "@/data/courses";
 import type { CatalogCourse } from "@/lib/courses";
 import { getCourseThumbnailUrl, initials, sanitizeCourseHtml } from "@/lib/courses";
 import { Container, Section } from "./ui";
-import { Footer, Navbar } from "./site-shell";
+import { Footer } from "./footer";
+import { Navbar } from "./site-shell";
 import { createClient } from "@/lib/supabase/browser";
 
 const filters = ["All", "School", "JEE", "NEET", "Skills"];
