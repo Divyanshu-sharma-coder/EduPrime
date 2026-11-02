@@ -85,7 +85,10 @@ function HowItWorks() {
     if (!sectionRef.current || window.matchMedia("(max-width: 767px)").matches || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     gsap.registerPlugin(ScrollTrigger);
     const ctx = gsap.context(() => {
-      ScrollTrigger.create({ trigger: sectionRef.current, start: "top top", end: "+=1200", pin: true, scrub: true, onUpdate: (self) => setActive(Math.min(3, Math.floor(self.progress * 4))) });
+      ScrollTrigger.create({ trigger: sectionRef.current, start: "top top", end: "+=1200", pin: true, scrub: true, onUpdate: (self) => {
+        const nextActive = Math.min(3, Math.floor(self.progress * 4));
+        setActive((currentActive) => currentActive === nextActive ? currentActive : nextActive);
+      } });
     }, sectionRef);
     return () => ctx.revert();
   }, []);
