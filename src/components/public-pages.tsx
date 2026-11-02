@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image, { type ImageLoaderProps } from "next/image";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -18,6 +19,47 @@ const filters = ["All", "School", "JEE", "NEET", "Skills"];
 const levels = ["All levels", "Beginner", "Intermediate", "Advanced"];
 const languages = ["All languages", "English", "Hindi", "Hinglish", "Other"];
 
+function passthroughImageLoader({ src }: ImageLoaderProps) {
+  return src;
+}
+
+function isOptimizableCourseThumbnail(src: string) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!supabaseUrl) return false;
+
+  try {
+    const imageUrl = new URL(src);
+    const configuredUrl = new URL(supabaseUrl);
+    return imageUrl.origin === configuredUrl.origin
+      && imageUrl.pathname.startsWith("/storage/v1/object/public/course-thumbnails/");
+  } catch {
+    return false;
+  }
+}
+
+function CourseImage({
+  src,
+  alt,
+  preload = false,
+}: {
+  src: string;
+  alt: string;
+  preload?: boolean;
+}) {
+  const optimized = isOptimizableCourseThumbnail(src);
+  return <Image
+    src={src}
+    alt={alt}
+    fill
+    sizes="(max-width: 767px) 100vw, (max-width: 1199px) 50vw, 33vw"
+    loading={preload ? undefined : "lazy"}
+    preload={preload}
+    unoptimized={!optimized}
+    loader={optimized ? undefined : passthroughImageLoader}
+    style={{ objectFit: "cover" }}
+  />;
+}
+
 function PublicShell({ children }: { children: React.ReactNode }) {
   return <><Navbar /><main className="public-main">{children}</main><Footer /></>;
 }
@@ -28,7 +70,7 @@ function PageIntro({ eyebrow, title, copy }: { eyebrow: string; title: string; c
 
 function CourseCard({ course }: { course: CatalogCourse }) {
   const thumbnail = getCourseThumbnailUrl(course.thumbnail);
-  return <article className="catalog-card"><div className="catalog-art">{thumbnail ? <img src={thumbnail} alt="" /> : <span className="catalog-placeholder">{initials(course.title)}</span>}<span className="catalog-badge">{course.category_id || "General"}</span></div><div className="catalog-body"><div className="catalog-rating"><span>{course.teacher_name}</span></div><h2>{course.title}</h2><p>{course.short_description || course.description}</p><div className="catalog-meta"><span><Users size={14} /> {course.level}</span><span>{course.language}</span></div><div className="catalog-footer"><strong>₹{course.price.toLocaleString("en-IN")}</strong><Link className="btn btn-gold" href={`/courses/${course.slug}`}>View course <ArrowRight size={15} /></Link></div></div></article>;
+  return <article className="catalog-card"><div className="catalog-art">{thumbnail ? <CourseImage src={thumbnail} alt="" /> : <span className="catalog-placeholder">{initials(course.title)}</span>}<span className="catalog-badge">{course.category_id || "General"}</span></div><div className="catalog-body"><div className="catalog-rating"><span>{course.teacher_name}</span></div><h2>{course.title}</h2><p>{course.short_description || course.description}</p><div className="catalog-meta"><span><Users size={14} /> {course.level}</span><span>{course.language}</span></div><div className="catalog-footer"><strong>₹{course.price.toLocaleString("en-IN")}</strong><Link className="btn btn-gold" href={`/courses/${course.slug}`}>View course <ArrowRight size={15} /></Link></div></div></article>;
 }
 
 export function CoursesPage({ courses, loadError }: { courses: CatalogCourse[]; loadError?: string }) {
@@ -54,7 +96,7 @@ function FilterSelect({ label, value, options, onChange }: { label: string; valu
 
 function CourseVisual({ course }: { course: CatalogCourse }) {
   const thumbnail = getCourseThumbnailUrl(course.thumbnail);
-  return <div className="detail-visual">{thumbnail ? <img src={thumbnail} alt="" /> : <span className="detail-placeholder">{initials(course.title)}</span>}<span className="catalog-badge">{course.category_id || "General"} · {course.level}</span></div>;
+  return <div className="detail-visual">{thumbnail ? <CourseImage src={thumbnail} alt="" preload /> : <span className="detail-placeholder">{initials(course.title)}</span>}<span className="catalog-badge">{course.category_id || "General"} · {course.level}</span></div>;
 }
 
 function EnrolButton({ slug, mobile = false }: { slug: string; mobile?: boolean }) {
