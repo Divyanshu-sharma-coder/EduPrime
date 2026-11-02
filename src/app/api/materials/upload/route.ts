@@ -38,8 +38,10 @@ async function getStaffContext(courseId: string, lessonId: string) {
     return { supabase, error: "Teacher or admin access is required." };
   }
 
-  const { data: course, error: courseError } = await supabase.from("courses").select("id, teacher_id").eq("id", courseId).single();
-  const { data: lesson, error: lessonError } = await supabase.from("lessons").select("id, module_id").eq("id", lessonId).single();
+  const [{ data: course, error: courseError }, { data: lesson, error: lessonError }] = await Promise.all([
+    supabase.from("courses").select("id, teacher_id").eq("id", courseId).single(),
+    supabase.from("lessons").select("id, module_id").eq("id", lessonId).single(),
+  ]);
   if (courseError || lessonError || !course || !lesson) return { supabase, error: "The selected course or lesson does not exist." };
   const { data: module, error: moduleError } = await supabase.from("modules").select("course_id").eq("id", lesson.module_id).single();
   if (moduleError || !module || module.course_id !== course.id) return { supabase, error: "The lesson does not belong to the selected course." };

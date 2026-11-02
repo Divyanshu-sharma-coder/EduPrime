@@ -79,7 +79,6 @@ export function StudyMaterialsPanel({ courses }: { courses: Course[] }) {
     setLoadingMaterials(Boolean(nextModule?.lessons[0]?.id));
     setError(null);
     setNotice(null);
-    setError(null);
   }
 
   function chooseModule(nextModuleId: string) {
@@ -90,7 +89,6 @@ export function StudyMaterialsPanel({ courses }: { courses: Course[] }) {
     setLoadingMaterials(Boolean(nextModule?.lessons[0]?.id));
     setError(null);
     setNotice(null);
-    setError(null);
   }
 
   async function uploadMaterial(event: FormEvent<HTMLFormElement>) {
